@@ -47,6 +47,7 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
     private PDFView mPDFView;
     private DownloadManager mDownloadManager;
     private Context mContext;
+    private File mPDFFile;
 
     public LoadTask(ProgressDialog mProgressDialog, PDFView mPDFView, DownloadManager mDownloadManager, Context mContext) {
         this.mProgressDialog = mProgressDialog;
@@ -84,90 +85,111 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
             OkHttpClient okHttpClient = new OkHttpClient();
 
             Request request = new Request.Builder().url(pdfUrl).build();
-            okHttpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.d(TAG, "onFailure: pdf fail");
-                }
+            Response response = okHttpClient.newCall(request).execute();
+            InputStream is = null;
+            byte[] buf = new byte[2048];
+            int len;
+            FileOutputStream fos = null;
+            try {
+                is = response.body().byteStream();
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    InputStream is = null;
-                    byte[] buf = new byte[2048];
-                    int len;
-                    FileOutputStream fos = null;
-                    try {
-                        is = response.body().byteStream();
+                File file = new File(MainActivity.STORAGE, fileName + ".pdf");
 
-                        File file = new File(MainActivity.STORAGE, fileName + ".pdf");
-
-                        if (!file.exists()) {
-                            fos = new FileOutputStream(file);
-                            while ((len = is.read(buf)) != -1) {
-                                fos.write(buf, 0, len);
-                            }
-                            fos.flush();
-                        }
-                        Log.d(TAG, "onResponse: pdf success");
-
-                        mPDFView.fromFile(file)
-                                .enableSwipe(false)
-                                .swipeHorizontal(true)
-                                .load();
-                        mPDFView.loadPages();
-                    } catch (Exception e) {
-                        Log.d(TAG, "onResponse: pdf failure");
-                        e.printStackTrace();
-                    } finally {
-                        if (is != null)
-                            is.close();
-                        if (fos != null)
-                            fos.close();
+                if (!file.exists()) {
+                    fos = new FileOutputStream(file);
+                    while ((len = is.read(buf)) != -1) {
+                        fos.write(buf, 0, len);
                     }
+                    fos.flush();
                 }
-            });
+                Log.d(TAG, "onResponse: pdf success");
+                mPDFFile = file;
+
+            } catch (Exception e) {
+                Log.d(TAG, "onResponse: pdf failure");
+                e.printStackTrace();
+            } finally {
+                if (is != null)
+                    is.close();
+                if (fos != null)
+                    fos.close();
+            }
+
+//            okHttpClient.newCall(request).enqueue(new Callback() {
+//                @Override
+//                public void onFailure(Call call, IOException e) {
+//                    Log.d(TAG, "onFailure: pdf fail");
+//                }
+//
+//                @Override
+//                public void onResponse(Call call, Response response) throws IOException {
+//                    InputStream is = null;
+//                    byte[] buf = new byte[2048];
+//                    int len;
+//                    FileOutputStream fos = null;
+//                    try {
+//                        is = response.body().byteStream();
+//
+//                        File file = new File(MainActivity.STORAGE, fileName + ".pdf");
+//
+//                        if (!file.exists()) {
+//                            fos = new FileOutputStream(file);
+//                            while ((len = is.read(buf)) != -1) {
+//                                fos.write(buf, 0, len);
+//                            }
+//                            fos.flush();
+//                        }
+//                        Log.d(TAG, "onResponse: pdf success");
+//
+//                        mPDFView.fromFile(file)
+//                                .enableSwipe(false)
+//                                .swipeHorizontal(true)
+//                                .load();
+//                        mPDFView.loadPages();
+//                    } catch (Exception e) {
+//                        Log.d(TAG, "onResponse: pdf failure");
+//                        e.printStackTrace();
+//                    } finally {
+//                        if (is != null)
+//                            is.close();
+//                        if (fos != null)
+//                            fos.close();
+//                    }
+//                }
+//            });
 
             request = new Request.Builder().url(zipUrl).build();
-            okHttpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.d(TAG, "onFailure: zip fail");
-                }
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    InputStream is = null;
-                    byte[] buf = new byte[2048];
-                    int len;
-                    FileOutputStream fos = null;
-                    try {
-                        is = response.body().byteStream();
+            is = null;
+            buf = new byte[2048];
+            fos = null;
+            try {
+                is = response.body().byteStream();
 
-                        File file = new File(MainActivity.STORAGE, fileName + ".zip");
+                File file = new File(MainActivity.STORAGE, fileName + ".zip");
 
-                        if (!file.exists()) {
-                            fos = new FileOutputStream(file);
-                            while ((len = is.read(buf)) != -1) {
-                                fos.write(buf, 0, len);
-                            }
-                            fos.flush();
-                        }
-                        Log.d(TAG, "onResponse: zip success");
-
-                        unZipFile(file, fileName);
-                        file.delete();
-
-                    } catch (Exception e) {
-                        Log.d(TAG, "onResponse: zip failure");
-                        e.printStackTrace();
-                    } finally {
-                        if (is != null)
-                            is.close();
-                        if (fos != null)
-                            fos.close();
+                if (!file.exists()) {
+                    fos = new FileOutputStream(file);
+                    while ((len = is.read(buf)) != -1) {
+                        fos.write(buf, 0, len);
                     }
+                    fos.flush();
                 }
-            });
+                Log.d(TAG, "onResponse: zip success");
+
+                unZipFile(file, fileName);
+                file.delete();
+
+            } catch (Exception e) {
+                Log.d(TAG, "onResponse: zip failure");
+                e.printStackTrace();
+            } finally {
+                if (is != null)
+                    is.close();
+                if (fos != null)
+                    fos.close();
+            }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -178,6 +200,10 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
 
     @Override
     protected void onPostExecute(String s) {
+        mPDFView.fromFile(mPDFFile)
+                .enableSwipe(false)
+                .swipeHorizontal(true)
+                .load();
         mProgressDialog.dismiss();
     }
 
