@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.github.barteksc.pdfviewer.PDFView;
+import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.vancior.myscore.activity.MainActivity;
 import com.vancior.myscore.activity.MatchActivity;
 
@@ -45,15 +46,13 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
 
     private ProgressDialog mProgressDialog;
     private PDFView mPDFView;
-    private DownloadManager mDownloadManager;
-    private Context mContext;
+    private MatchActivity mMatchActivity;
     private File mPDFFile;
 
-    public LoadTask(ProgressDialog mProgressDialog, PDFView mPDFView, DownloadManager mDownloadManager, Context mContext) {
+    public LoadTask(ProgressDialog mProgressDialog, PDFView mPDFView, MatchActivity matchActivity) {
         this.mProgressDialog = mProgressDialog;
         this.mPDFView = mPDFView;
-        this.mDownloadManager = mDownloadManager;
-        this.mContext = mContext;
+        this.mMatchActivity = matchActivity;
     }
 
     @Override
@@ -159,25 +158,26 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
 //            });
 
             request = new Request.Builder().url(zipUrl).build();
-
+            response = okHttpClient.newCall(request).execute();
             is = null;
             buf = new byte[2048];
             fos = null;
             try {
                 is = response.body().byteStream();
 
+                File checkFile = new File(MainActivity.STORAGE, fileName + ".xml");
                 File file = new File(MainActivity.STORAGE, fileName + ".zip");
 
-                if (!file.exists()) {
+                if (!checkFile.exists()) {
                     fos = new FileOutputStream(file);
                     while ((len = is.read(buf)) != -1) {
                         fos.write(buf, 0, len);
                     }
                     fos.flush();
+                    unZipFile(file, fileName);
                 }
                 Log.d(TAG, "onResponse: zip success");
 
-                unZipFile(file, fileName);
                 file.delete();
 
             } catch (Exception e) {
@@ -203,16 +203,16 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
         mPDFView.fromFile(mPDFFile)
                 .enableSwipe(false)
                 .swipeHorizontal(true)
+                .onLoad(new OnLoadCompleteListener() {
+                    @Override
+                    public void loadComplete(int nbPages) {
+
+                    }
+                })
                 .load();
         mProgressDialog.dismiss();
+        mMatchActivity.parseSheet();
     }
-
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "onReceive: download success");
-        }
-    };
 
     private void unZipFile(File file, String fileName) {
 
