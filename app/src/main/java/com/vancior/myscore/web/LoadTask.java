@@ -94,13 +94,13 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
 
                 File file = new File(MainActivity.STORAGE, fileName + ".pdf");
 
-                if (!file.exists()) {
+//                if (!file.exists()) {
                     fos = new FileOutputStream(file);
                     while ((len = is.read(buf)) != -1) {
                         fos.write(buf, 0, len);
                     }
                     fos.flush();
-                }
+//                }
                 Log.d(TAG, "onResponse: pdf success");
                 mPDFFile = file;
 

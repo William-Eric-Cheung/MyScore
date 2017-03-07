@@ -41,7 +41,7 @@ public class Chord {
     public String toString() {
         String result = "";
         for (Note i: notes) {
-            result += String.valueOf(i.getPitchStep()) + i.getPitchOctave() + " ";
+            result += String.valueOf(i.getPitchStep()) + i.getPitchOctave() + i.getAlter() + " ";
         }
         if (newPage)
             result += "new-page = yes";

@@ -141,9 +141,9 @@ public class SearchTask extends AsyncTask<String, Integer, List<Sheet>> {
 
     @Override
     protected void onPostExecute(List<Sheet> sheets) {
-//        mStaggeredViewAdapter.notifyDataSetChanged();
+        mStaggeredViewAdapter.notifyDataSetChanged();
 //        mGridViewAdapter.notifyDataSetChanged();
-        mRecyclerView.requestLayout();
+//        mRecyclerView.requestLayout();
     }
 
     @Override
