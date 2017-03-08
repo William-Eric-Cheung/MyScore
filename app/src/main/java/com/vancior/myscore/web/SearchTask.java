@@ -1,6 +1,7 @@
 package com.vancior.myscore.web;
 
 import android.os.AsyncTask;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
@@ -36,24 +37,13 @@ public class SearchTask extends AsyncTask<String, Integer, List<Sheet>> {
 
     private static final String TAG = "SearchTask";
     private MyStaggeredViewAdapter mStaggeredViewAdapter;
-    private MyGridViewAdapter mGridViewAdapter;
     private MyFragment mFragment;
-    private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
-    public SearchTask(MyFragment mFragment, MyStaggeredViewAdapter mStaggeredViewAdapter, RecyclerView mRecyclerView) {
+    public SearchTask(MyFragment mFragment, MyStaggeredViewAdapter mStaggeredViewAdapter, SwipeRefreshLayout mSwipeRefreshLayout) {
         this.mStaggeredViewAdapter = mStaggeredViewAdapter;
         this.mFragment = mFragment;
-        this.mRecyclerView = mRecyclerView;
-    }
-
-    public SearchTask(MyGridViewAdapter mGridViewAdapter) {
-        this.mGridViewAdapter = mGridViewAdapter;
-    }
-
-    public SearchTask(MyFragment mFragment, MyGridViewAdapter mGridViewAdapter, RecyclerView mRecyclerView) {
-        this.mFragment = mFragment;
-        this.mGridViewAdapter = mGridViewAdapter;
-        this.mRecyclerView = mRecyclerView;
+        this.mSwipeRefreshLayout = mSwipeRefreshLayout;
     }
 
     @Override
@@ -62,7 +52,7 @@ public class SearchTask extends AsyncTask<String, Integer, List<Sheet>> {
         try {
             Document document = Jsoup.connect(params[0]).get();
 
-            OkHttpClient mOkHttpClient = new OkHttpClient();
+//            OkHttpClient mOkHttpClient = new OkHttpClient();
 
             List<Sheet> sheets = new ArrayList<>();
             Elements elements = document.getElementsByAttributeValue("role", "article");
@@ -74,11 +64,8 @@ public class SearchTask extends AsyncTask<String, Integer, List<Sheet>> {
                         replace("-w310-h434-", "-w400-h560-");
                 linkUrl = "https://musescore.com" + score.getElementsByAttributeValue("rel", "bookmark").attr("href");
                 userName = score.getElementsByClass("user name").text();
-                metaElements = score.getElementsByClass("meta").get(0).getElementsByTag("span");
-                postTime = metaElements.get(0).text();
-                viewNum = metaElements.get(1).text();
 
-                mFragment.addSheet(bookmark, userName, postTime, viewNum, linkUrl, imgUrl);
+                mFragment.addSheet(bookmark, userName, linkUrl, imgUrl);
 
 //                Sheet sheet = new Sheet(bookmark, userName, postTime, viewNum, link, imgUrl);
 //                sheets.add(sheet);
@@ -142,6 +129,7 @@ public class SearchTask extends AsyncTask<String, Integer, List<Sheet>> {
     @Override
     protected void onPostExecute(List<Sheet> sheets) {
         mStaggeredViewAdapter.notifyDataSetChanged();
+        mSwipeRefreshLayout.setRefreshing(false);
 //        mGridViewAdapter.notifyDataSetChanged();
 //        mRecyclerView.requestLayout();
     }

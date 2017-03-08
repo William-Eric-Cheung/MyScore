@@ -92,7 +92,7 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
             try {
                 is = response.body().byteStream();
 
-                File file = new File(MainActivity.STORAGE, fileName + ".pdf");
+                File file = new File(MainActivity.CACHESTORAGE, fileName + ".pdf");
 
 //                if (!file.exists()) {
                     fos = new FileOutputStream(file);
@@ -165,8 +165,8 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
             try {
                 is = response.body().byteStream();
 
-                File checkFile = new File(MainActivity.STORAGE, fileName + ".xml");
-                File file = new File(MainActivity.STORAGE, fileName + ".zip");
+                File checkFile = new File(MainActivity.CACHESTORAGE, fileName + ".xml");
+                File file = new File(MainActivity.CACHESTORAGE, fileName + ".zip");
 
                 if (!checkFile.exists()) {
                     fos = new FileOutputStream(file);
@@ -226,7 +226,7 @@ public class LoadTask extends AsyncTask<String, Integer, String> {
             while ((entry = zipIs.getNextEntry()) != null) {
                 Log.d(TAG, "unZipFile: " + entry.getName());
                 if (!entry.getName().contains("META_INF")) {
-                    outFile = new File(MainActivity.STORAGE, fileName + ".xml");
+                    outFile = new File(MainActivity.CACHESTORAGE, fileName + ".xml");
                     if (!outFile.getParentFile().exists()) {
                         outFile.getParentFile().mkdir();
                     }

@@ -1,10 +1,15 @@
 package com.vancior.myscore.view;
 
 
+import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
@@ -13,12 +18,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.vancior.myscore.MyApplication;
 import com.vancior.myscore.R;
 import com.vancior.myscore.activity.MainActivity;
 import com.vancior.myscore.activity.MatchActivity;
 import com.vancior.myscore.adapter.MyGridViewAdapter;
 import com.vancior.myscore.adapter.MyStaggeredViewAdapter;
 import com.vancior.myscore.bean.Sheet;
+import com.vancior.myscore.database.MyDatabaseHelper;
 import com.vancior.myscore.web.SearchTask;
 
 import java.util.ArrayList;
@@ -30,16 +37,19 @@ import java.util.List;
  */
 
 public class MyFragment extends Fragment
-        implements MyStaggeredViewAdapter.OnItemClickListener{
+        implements MyStaggeredViewAdapter.OnItemClickListener,
+        MyStaggeredViewAdapter.OnItemLongClickListener,
+        SwipeRefreshLayout.OnRefreshListener{
 
     private static final String TAG = "MyFragment";
 
-    private List<Sheet> sheets;
+    protected List<Sheet> sheets;
     private View mView;
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
-    private MyStaggeredViewAdapter mStaggeredViewAdapter;
-    private MyGridViewAdapter mGridViewAdapter;
+    protected SwipeRefreshLayout mSwipeRefreshLayout;
+    protected MyStaggeredViewAdapter mStaggeredViewAdapter;
+    protected MyDatabaseHelper mMyDatabaseHelper;
 
     //TODO: change SPAN_COUNT according to the screen size
     private static final int SPAN_COUNT = 2;
@@ -56,14 +66,14 @@ public class MyFragment extends Fragment
         super.onActivityCreated(savedInstanceState);
 
         mRecyclerView = (RecyclerView) mView.findViewById(R.id.id_recyclerview);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) mView.findViewById(R.id.id_swiperefreshlayout);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
 
         sheets = new ArrayList<>();
+        mMyDatabaseHelper = new MyDatabaseHelper(MyApplication.getContext(), "MyScore.db", null, 2);
 
         configRecyclerView();
-
-        SearchTask task = new SearchTask(this, mStaggeredViewAdapter, mRecyclerView);
-//        SearchTask task = new SearchTask(this, mGridViewAdapter, mRecyclerView);
-        task.execute("https://musescore.com/sheetmusic?text=&instruments=0&parts=1");
+        loadSheets();
     }
 
     private void configRecyclerView() {
@@ -71,6 +81,7 @@ public class MyFragment extends Fragment
 //        mLayoutManager = new GridLayoutManager(getActivity(), SPAN_COUNT, GridLayoutManager.VERTICAL, true);
         mStaggeredViewAdapter = new MyStaggeredViewAdapter(getActivity(), sheets);
         mStaggeredViewAdapter.setOnItemClickListener(this);
+        mStaggeredViewAdapter.setOnItemLongClickListener(this);
         mRecyclerView.setAdapter(mStaggeredViewAdapter);
 //        mGridViewAdapter = new MyGridViewAdapter(getActivity(), sheets);
 //        mGridViewAdapter.setOnItemClickListener(this);
@@ -87,23 +98,47 @@ public class MyFragment extends Fragment
         startActivity(intent);
     }
 
-    public void addSheet(String bookmark, String userName, String postTime, String viewNum, String linkUrl, String imgUrl) {
-        Sheet sheet = new Sheet(bookmark, userName, postTime, viewNum, linkUrl, imgUrl);
+    @Override
+    public void onItemLongClick(View view, final int position) {
+        Log.d(TAG, "onItemLongClick: " + sheets.get(position).getLinkUrl());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Notify");
+        builder.setMessage("Add to Favorite?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+                SQLiteDatabase db = mMyDatabaseHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put("bookmark", sheets.get(position).getBookmark());
+                values.put("author", sheets.get(position).getUserName());
+                values.put("linkurl", sheets.get(position).getLinkUrl());
+                values.put("imgurl", sheets.get(position).getImgUrl());
+                db.insert("Favorite", null, values);
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+
+    @Override
+    public void onRefresh() {
+        loadSheets();
+    }
+
+    public void addSheet(String bookmark, String userName, String linkUrl, String imgUrl) {
+        Sheet sheet = new Sheet(bookmark, userName, linkUrl, imgUrl);
         sheets.add(sheet);
 //        mGridViewAdapter.notifyDataSetChanged();
     }
 
-    public void onSearch(String query) {
-        if (sheets != null)
-            sheets.clear();
-//        SearchTask task = new SearchTask(this, mGridViewAdapter, mRecyclerView);
-        SearchTask task = new SearchTask(this, mStaggeredViewAdapter, mRecyclerView);
-        task.execute("https://musescore.com/sheetmusic?text=" + query + "&instruments=0&parts=1");
-    }
+    public void onSearch(String query) {}
 
-    public void onRefresh() {
-        if (mRecyclerView != null)
-            mRecyclerView.requestLayout();
-    }
+    protected void loadSheets() {}
 
 }

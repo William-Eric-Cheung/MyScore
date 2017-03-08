@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 
 import com.bumptech.glide.Glide;
 import com.vancior.myscore.R;
@@ -33,15 +34,24 @@ public class MyStaggeredViewAdapter extends RecyclerView.Adapter<MyRecyclerViewH
 
     }
 
-    public OnItemClickListener mOnItemClickListener;
+    public interface OnItemLongClickListener {
+
+        void onItemLongClick(View view, int position);
+    }
+
+    private OnItemClickListener mOnItemClickListener;
+    private OnItemLongClickListener mOnItemLongClickListener;
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.mOnItemClickListener = listener;
     }
 
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.mOnItemLongClickListener = listener;
+    }
+
     public Context mContext;
     public List<Sheet> mDatas;
-    public List<Integer> mHeights;
     public LayoutInflater mLayoutInflater;
 
     public MyStaggeredViewAdapter(Context mContext, List<Sheet> sheets) {
@@ -64,6 +74,16 @@ public class MyStaggeredViewAdapter extends RecyclerView.Adapter<MyRecyclerViewH
                 @Override
                 public void onClick(View view) {
                     mOnItemClickListener.onItemClick(holder.itemView, position);
+                }
+            });
+        }
+
+        if (mOnItemLongClickListener != null) {
+            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    mOnItemLongClickListener.onItemLongClick(holder.itemView, position);
+                    return true;
                 }
             });
         }

@@ -21,7 +21,9 @@ import android.view.View;
 import com.vancior.myscore.R;
 import com.vancior.myscore.adapter.MyViewPagerAdapter;
 import com.vancior.myscore.bean.Sheet;
+import com.vancior.myscore.view.FavoriteFragment;
 import com.vancior.myscore.view.MyFragment;
+import com.vancior.myscore.view.OnlineFragment;
 import com.vancior.myscore.web.SearchTask;
 
 import java.io.File;
@@ -45,7 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private List<MyFragment> mFragments;
     private MyViewPagerAdapter mViewPagerAdapter;
 
-    public static File STORAGE;
+    public static File CACHESTORAGE;
+    public static File FILESTORAGE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,11 +87,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void initStorage() {
         if (Environment.getExternalStorageState().equals("mounted")) {
-            STORAGE = getExternalCacheDir();
-            Log.d(TAG, "initStorage: " + STORAGE);
+            CACHESTORAGE = getExternalCacheDir();
+            FILESTORAGE = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+            Log.d(TAG, "initStorage: " + CACHESTORAGE);
         } else {
-            STORAGE = getCacheDir();
-            Log.d(TAG, "initStorage: " + STORAGE);
+            CACHESTORAGE = getCacheDir();
+            FILESTORAGE = getFilesDir();
+            Log.d(TAG, "initStorage: " + CACHESTORAGE);
         }
     }
 
@@ -105,10 +110,10 @@ public class MainActivity extends AppCompatActivity {
         mTitles = getResources().getStringArray(R.array.tab_titles);
 
         mFragments = new ArrayList<>();
-//        for (int i = 0; i < mTitles.length; ++i) {
-            MyFragment myFragment = new MyFragment();
-            mFragments.add(myFragment);
-//        }
+        OnlineFragment onlineFragment = new OnlineFragment();
+        FavoriteFragment favoriteFragment = new FavoriteFragment();
+        mFragments.add(onlineFragment);
+        mFragments.add(favoriteFragment);
     }
 
     private void configViews() {
